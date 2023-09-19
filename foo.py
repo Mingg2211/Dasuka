@@ -108,11 +108,13 @@ class My_Search():
         scores = self.bm25_quakhu.get_scores(tokenized_query)
         top_candidates = sorted(range(len(scores)), key=lambda i: -scores[i])[:2]
         result_qk = []
+        tham_khao_hs = []
         for i in top_candidates:
             # print(f"Document {i + 1}: {self.documents_qk[i]}, Score: {scores[i]}")
+            tham_khao_hs.append(self.documents_qk[i])
             if scores[i] != 0:
                 result_qk.append(str(self.documents_qk[i]).split(' ||| ')[0])
-        return result_qk
+        return result_qk, tham_khao_hs
     def build_bm25_full_so(self):
         df = pd.read_csv(self.csv_bieuthue)
         df['mo_ta'] = df['mo_ta'].apply(normalize_text)
