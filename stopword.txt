@@ -1,0 +1,41 @@
+class My_Search():
+    tree_path = 'tree/tree.json'
+    bm25_4so_path = 'bm25/4so/bm25_4so_model.pkl'
+    bm25_quakhu_path = 'bm25/quakhu/bm25_quakhu_model.pkl'
+    def __init__(self, csv_bieuthue, csv_hs_quakhu):
+        self.csv_bieuthue = csv_bieuthue
+        self.csv_hs_quakhu = csv_hs_quakhu
+        self.root = None
+        self.document_4_so = None
+        self.documents_qk = None
+        self.bm25_4so = None
+        self.bm25_quakhu = None
+
+    def build_bm25_quakhu(self):
+        df = pd.read_csv(self.csv_hs_quakhu)
+        df['Ten_SP'] = df['Ten_SP'].apply(normalize_text)
+        df['text'] = df.apply(create_text, axis=1)
+        self.documents_qk = df['text'].tolist()
+        tokenized_documents = [document.split() for document in self.documents_qk]
+        bm25_qk = BM25Plus(tokenized_documents)
+        return bm25_qk
+    def load_bm25_quakhu(self):
+        if os.path.exists(self.bm25_quakhu_path):
+            print("Loading BM25_QK ...")
+            self.bm25_quakhu = joblib.load(self.bm25_quakhu_path)
+            print("Done loading BM5_QK !!!")
+        else : 
+            # save bm25_qk to pkl
+            print("Building BM25_QK ...")
+            self.bm25_quakhu = self.build_bm25_quakhu()
+            joblib.dump(self.bm25_quakhu, self.bm25_quakhu_path)
+            print("Done building BM25_QK !!!")
+        return self.bm25_quakhu
+    def search_QK(self, mo_ta:str):
+        query = normalize_text(mo_ta)
+        tokenized_query = query.split()
+        scores = self.bm25_quakhu.get_scores(tokenized_query)
+        top_candidates = sorted(range(len(scores)), key=lambda i: -scores[i])[:3]
+        for i in top_candidates:
+            print(f"Document {i + 1}: {self.documents_qk[i]}, Score: {scores[i]}")
+        return top_candidates
