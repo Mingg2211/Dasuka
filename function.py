@@ -14,7 +14,7 @@ def normalize_text(text):
     for stopword in STOPWORDS:
         if stopword in text :
             text = text.replace(stopword, '')
-    text = word_tokenize(text, format='text')
+    # text = word_tokenize(text, format='text')
     # text = text.replace(' ','_ ')
     return text.lower().strip()
 
@@ -33,5 +33,5 @@ def get8so(data_csv,query):
     return ranked_tariffs[:5]        
 
 def create_text(row):
-    return ' ||| '.join([str(row['Ma_HS']), str(row['Ten_SP']), str(row['Ngay_xac_nhan'])])
+    return ' ||| '.join([str(row['Mã HS']), str(row['Tên hàng']), str(row['Ngày ĐK'])])
 # print(normalize_text('.#&Hoá chất Axit nitric HNO3 68%, hàng mới 100%'))

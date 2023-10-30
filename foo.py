@@ -26,6 +26,8 @@ class My_Search():
         self.bm25_4so = None
         self.bm25_quakhu = None
         self.bm25_full_so = None
+            
+    
     def build_tree(self):
         # build tree and save
         df = pd.read_csv(self.csv_bieuthue)
@@ -39,7 +41,7 @@ class My_Search():
         # Duyệt qua dữ liệu để xây dựng cây
         current_node = root
         for item in nhom_hs_dict:
-            dashes = item['mo_ta'].count('-')
+            dashes = item['mo_ta'].count('- ')
             name = item
             while len(current_node.ancestors) >= dashes + 1:
                 current_node = current_node.parent
@@ -69,13 +71,19 @@ class My_Search():
     def get_ancestors_by_hscode(self,hscode):
         target_node = next((node for node in self.root.descendants if node.name['hscode'] == hscode), None)
         ancestors = list(target_node.ancestors)
-        ancestors.reverse()
+        # ancestors.reverse()
         return [anc.name for anc in ancestors]
     def get_descendants_by_hscode(self,hscode):
         target_node = next((node for node in self.root.descendants if node.name['hscode'] == hscode), None)
         descendants = list(target_node.descendants)
         # descendants.reverse()
-        return [des.name for des in descendants] 
+        return [des.name for des in descendants]
+    def get_all_relative_by_hscode(self, hscode):
+        ancestors = self.get_ancestors_by_hscode(hscode)
+        descendants = self.get_descendants_by_hscode(hscode)
+        ancestors.append(self.search_Tree(hscode))
+        relative = ancestors + descendants
+        return relative
     def search_Tree(self, hscode):
         target_node = next((node for node in self.root.descendants if node.name['hscode'] == hscode), None)
         return target_node.name
@@ -84,6 +92,7 @@ class My_Search():
         df['Ten_SP'] = df['Ten_SP'].apply(normalize_text)
         df['text'] = df.apply(create_text, axis=1)
         documents_qk = df['text'].tolist()
+        print(len(documents_qk))
         tokenized_documents = [document.split() for document in documents_qk]
         bm25_qk = BM25Plus(tokenized_documents)
         return bm25_qk, documents_qk
@@ -104,17 +113,16 @@ class My_Search():
     
     def search_QK(self, mo_ta:str):
         query = normalize_text(mo_ta)
+        # print('your query : ', query)
         tokenized_query = query.split()
         scores = self.bm25_quakhu.get_scores(tokenized_query)
         top_candidates = sorted(range(len(scores)), key=lambda i: -scores[i])[:2]
         result_qk = []
-        tham_khao_hs = []
         for i in top_candidates:
-            # print(f"Document {i + 1}: {self.documents_qk[i]}, Score: {scores[i]}")
-            tham_khao_hs.append(self.documents_qk[i])
+            print(f"Document {i + 1}: {self.documents_qk[i]}, Score: {scores[i]}")
             if scores[i] != 0:
                 result_qk.append(str(self.documents_qk[i]).split(' ||| ')[0])
-        return result_qk, tham_khao_hs
+        return result_qk
     def build_bm25_full_so(self):
         df = pd.read_csv(self.csv_bieuthue)
         df['mo_ta'] = df['mo_ta'].apply(normalize_text)
@@ -149,34 +157,84 @@ class My_Search():
         return result_full
     def search_main(self, mo_ta:str):
         result_qk = self.search_QK(mo_ta) 
-        result_full = self.search_Full(mo_ta)
+        # result_full = self.search_Full(mo_ta)
+        # chi dung thong tin qua khu
+        result_full = []
         hs_candidates = []
         tmp_list = result_qk + result_full
         for item in tmp_list:
             if item not in hs_candidates:
                 hs_candidates.append(item)
         print(hs_candidates)
+        # check bm25 . ti tat di
+        # return hs_candidates
+        # 
         result = []
         for item in hs_candidates:
-            result.append(str(self.search_Tree(item)))
-        message = '\n'.join(result)
-        print('Tìm thấy {len_result} mã hscode phù hợp với mô tả "{mo_ta}" : \n'.format(len_result=len(result), mo_ta=mo_ta) + message)
+            try:
+                mess = self.search_Tree(item)
+            except Exception as e:
+                continue
+            result.append(mess)
+        # message = '\n'.join(result)
+        # print('Tìm thấy {len_result} mã hscode phù hợp với mô tả "{mo_ta}" : \n'.format(len_result=len(result), mo_ta=mo_ta))
+        # print(result)
+        return result
+    def search_documents_qk(self, hscode:str):
+        hs_code = int(hscode)
+        df = pd.read_csv(self.csv_hs_quakhu)
+        df['Ma_HS'] = df['Ma_HS'].astype(int)
+        rows = df[df['Ma_HS'] == hs_code]
+        return rows.to_dict('records')[:10]
+    def get_all_bieu_thue(self):
+        df = pd.read_csv(self.csv_bieuthue)
+        result = df.to_dict('records')
         return result
 if __name__ == '__main__':
     my_search = My_Search('data/data_sample.csv', 'data/HSCode_sample.csv')
     my_search.load_tree()
     # my_search.display_tree()
-    print(my_search.get_ancestors_by_hscode('39231090'))
+    # print(my_search.get_ancestors_by_hscode('39231090'))
     # print(my_search.get_descendants_by_hscode('7326'))
-    # my_search.load_bm25_quakhu()
+    my_search.load_bm25_quakhu()
     # my_search.load_bm25_full_so()
+    # print(my_search.search_documents_qk('96190099'))
     # print(my_search.search_QK('máy cạo râu'))
     # print(my_search.search_Full('thịt lợn đông lạnh'))
     # print(my_search.search_Tree('#46'))
     # while True:
     #     mo_ta = str(input("Nhập vào mô tả : "))
     #     if mo_ta != 'q':
-    #         my_search.search_main(mo_ta)
+    #         try:
+    #             print(my_search.search_main(mo_ta))
+    #         except Exception as e:
+    #             print(e)
+    #             continue
     #     else:
     #         break
+    # df = pd.read_csv('data/HSCode_sample.csv')
+    # mota_list = df['Ten_SP'].tolist()
+    # for i in range(len(mota_list)):
+        
+            
+    #     # print(mota_list[i])
+    #     # print(my_search.search_main(mota_list[i]))
+    #     ma_hs = str(df.iloc[i]['Ma_HS'])
+    #     # print(ma_hs)
+    #     # for hscode_searched in my_search.search_main(mota_list[i]):
+    #         # print(type(hscode_searched))
+    #     if ma_hs in my_search.search_main(mota_list[i]):
+    #         mess = str(mota_list[i]) + ',' + str(my_search.search_main(mota_list[i])) +',' +str(ma_hs) + ',true'
+    #         print('true')
+    #         with open('hs_checker.txt','a', encoding='utf-8') as f:
+    #             f.write(mess)
+    #             f.write('\n')
+    #     else:
+    #         print('false')
+    #         with open('hs_checker.txt','a', encoding='utf-8') as f:
+    #             mess = str(mota_list[i]) + ',' + str(my_search.search_main(mota_list[i])) +',' +str(ma_hs) + ',false'
+    #             f.write(mess)
+    #             f.write('\n')
+                
+        
         

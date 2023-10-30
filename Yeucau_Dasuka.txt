@@ -1,0 +1,18 @@
+Yêu cầu Dasuka
+1. Kết quả test công nghệ trên bộ csv HS quá khứ của Dasuka
+- Đề xuất top k, k = 2
+- recall@2 = 99.7%
+2. Các dự đoán sai do :
+    - dữ liệu outlier (khớp mô tả nhưng khác biệt về mã hscode)
+    VD :    giấy in dạng cuộn dùng để in nhãn mác , rộng90mm*dài300M , hàng thuộc mục III-4, danh mục số 05,['48026290'],48030090,false
+            giấy in dạng cuộn dùng trong máy in mã vạch , rộng90mm*dài300M , thuộc mục III-4, danh  mục số 05,['48030090', '48026190'],48030090,true
+            giấy in dạng cuộn dùng trong máy in mã vạch , model: C200, rộng40mm*dài300M , thuộc mục III-4, danh  mục số 05,['48030090', '48026290'],48030090,true   
+    - dữ liệu out of date (những mã quá cũ từ 2014 giờ đã k tra cứu được trong biểu thuế)
+
+=> cần có người có kinh nghiệm kiểm định lại dữ liệu
+3. Làm rõ quy trình tìm kiếm mã hscode của nhân viên Dasuka (tìm kiếm trong biểu thuế như nào, tìm kiếm trong quá khứ như nào)
+=> Nên hay không việc xây dựng module tìm kiếm chuẩn xác mã hscode từ biểu thuế (khả thi không cao, hiện tại tìm kiếm trong biểu thuế đóng vai trò giới hạn không gian tìm kiếm và chỉ đóng vai trò tham khảo)
+4. Với công nghệ hiện tại mà Viện cung cấp liệu có làm giảm khối lượng công việc cho nhân viên tìm kiếm, nhập liệu ?
+5. SAO NHIÊU TRƯỜNG HỢP RƠI VÀO LOẠI KHÁC VẬY ??
+
+https://ca17-2405-4800-1f05-1300-f48-34d4-c32b-7d0f.ngrok-free.app
